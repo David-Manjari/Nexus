@@ -6,7 +6,7 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h2>Users</h2>
+      <h1>Users</h1>
       <p>Manage user access and review current identities in the workspace.</p>
 
       <div style={{ display: "grid", gap: "12px", marginTop: "20px" }}>

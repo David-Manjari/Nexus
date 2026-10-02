@@ -32,7 +32,7 @@ function DashboardHome() {
   return (
     <div style={{ display: "grid", gap: "12px" }}>
       <p style={{ margin: 0, color: "#475569" }}>Welcome back, {user?.name}</p>
-      <h2 style={{ margin: 0 }}>Operations dashboard</h2>
+      <h1 style={{ margin: 0 }}>Operations dashboard</h1>
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
         <span style={{ background: "#eff6ff", color: "#1d4ed8", padding: "8px 12px", borderRadius: "999px" }}>
           Role: {user?.role}

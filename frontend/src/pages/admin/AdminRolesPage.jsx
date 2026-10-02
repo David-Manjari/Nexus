@@ -3,7 +3,7 @@ import { ROLE_DEFINITIONS } from "../../roles";
 export default function AdminRolesPage() {
   return (
     <div>
-      <h2>Roles</h2>
+      <h1>Roles</h1>
       <p>Review the role structure and permission set used across the platform.</p>
 
       <div style={{ display: "grid", gap: "12px", marginTop: "20px" }}>
