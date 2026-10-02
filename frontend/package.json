@@ -9,9 +9,9 @@
         "preview": "vite preview --host 0.0.0.0"
     },
     "dependencies": {
-        "node": "^22.23.3",
         "react": "^19.1.0",
-        "react-dom": "^19.1.0"
+        "react-dom": "^19.1.0",
+        "react-router-dom": "^6.28.0"
     },
     "devDependencies": {
         "@vitejs/plugin-react": "^4.4.1",
