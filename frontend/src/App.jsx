@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -6,8 +6,10 @@ import {
   Navigate,
   Outlet,
   useLocation,
+  Link,
 } from "react-router-dom";
 
+import { getUnreadCount } from "./api/notifications";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleGuard from "./auth/RoleGuard";
@@ -28,19 +30,81 @@ function getActivePage(pathname) {
 
 function DashboardHome() {
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+
+    async function loadUnreadCount() {
+      try {
+        const count = await getUnreadCount(user.id);
+        if (active) setUnreadCount(count);
+      } catch {
+        if (active) setUnreadCount(0);
+      }
+    }
+
+    loadUnreadCount();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
-    <div style={{ display: "grid", gap: "12px" }}>
-      <p style={{ margin: 0, color: "#475569" }}>Welcome back, {user?.name}</p>
-      <h2 style={{ margin: 0 }}>Operations dashboard</h2>
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-        <span style={{ background: "#eff6ff", color: "#1d4ed8", padding: "8px 12px", borderRadius: "999px" }}>
+    <div style={{ display: "grid", gap: "16px" }}>
+      <p style={{ margin: 0, color: "#475569", fontSize: "1.4rem", fontWeight: 600 }}>
+        Welcome back,
+      </p>
+      <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginTop: "4px" }}>
+        <span
+          style={{
+            background: "#eff6ff",
+            color: "#1d4ed8",
+            padding: "18px 24px",
+            borderRadius: "999px",
+            fontSize: "1.5rem",
+            fontWeight: 700,
+          }}
+        >
           Role: {user?.role}
         </span>
-        <span style={{ background: "#f1f5f9", color: "#334155", padding: "8px 12px", borderRadius: "999px" }}>
+        <span
+          style={{
+            background: "#f1f5f9",
+            color: "#334155",
+            padding: "18px 24px",
+            borderRadius: "999px",
+            fontSize: "1.5rem",
+            fontWeight: 700,
+          }}
+        >
           Department: {user?.department}
         </span>
       </div>
+
+      <Link
+        to="/notifications"
+        style={{
+          display: "block",
+          width: "100%",
+          maxWidth: "320px",
+          background: "#fee2e2",
+          color: "#991b1b",
+          padding: "12px 16px",
+          borderRadius: 0,
+          fontSize: "1.1rem",
+          fontWeight: 700,
+          textDecoration: "none",
+          boxSizing: "border-box",
+          border: "1px solid #fca5a5",
+          cursor: "pointer",
+          lineHeight: 1.4,
+        }}
+      >
+        {unreadCount > 0 ? "Click here to view unread notifications" : "Click here to view notifications"}
+      </Link>
     </div>
   );
 }
@@ -52,8 +116,7 @@ function Shell() {
   return (
     <AppLayout activePage={activePage.id}>
       <main className="page-content">
-        <p className="page-eyebrow">Nexus workspace</p>
-        <h1>{activePage.label}</h1>
+        {activePage.id !== "dashboard" && <h1>{activePage.label}</h1>}
         <Outlet />
       </main>
     </AppLayout>
