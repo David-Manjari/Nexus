@@ -1,8 +1,9 @@
 // Components must only call these functions, never mock/data.js directly.
 // Phase 2: replace each body with a fetch() call to the Flask API.
 //
-// Assumed notification shape (confirm with Member 1 in mock/data.js):
+// Notification shape (matches mock/data.js):
 // { id, userId, message, type, read, emailSent, createdAt }
+// IDs are strings like "notif-1" to match the rest of the mock data.
 import { notifications } from "../mock/data";
 
 export async function getNotifications(userId) {
@@ -34,7 +35,7 @@ export async function markAllAsRead(userId) {
 export async function createNotification({ userId, message, type = "info" }) {
   if (!userId || !message) throw new Error("userId and message are required");
   const n = {
-    id: Date.now(),
+    id: `notif-${Date.now()}`,
     userId,
     message,
     type,
