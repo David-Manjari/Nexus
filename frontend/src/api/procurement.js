@@ -92,29 +92,3 @@ export async function getProcurementsAwaitingApproval() {
   await wait();
   return copy(procurements.filter((p) => p.status === "pending_approval").sort(byNewest));
 }
-
-// POST /api/procurements/:id/decision  { decision: "approved" | "rejected", comment }  ->  procurement
-// Level 1 approval moves it to level 2; level 2 approval makes it final.
-export async function recordApprovalDecision(id, { decision, comment = "" }, user) {
-  await wait();
-  const procurement = findProcurement(id);
-  if (procurement.status !== "pending_approval") throw new Error("This request is not awaiting approval.");
-
-  const at = now();
-  const level = procurement.approvalLevel;
-  const suffix = comment.trim() ? `: ${comment.trim()}` : "";
-
-  if (decision === "rejected") {
-    procurement.status = "rejected";
-    procurement.history.push({ status: "rejected", note: `Rejected at level ${level}${suffix}`, by: user.name, at });
-  } else if (level < 2) {
-    procurement.approvalLevel = level + 1;
-    procurement.history.push({ status: "pending_approval", note: `Approved at level ${level}, sent to level ${level + 1}${suffix}`, by: user.name, at });
-  } else {
-    procurement.status = "approved";
-    procurement.history.push({ status: "approved", note: `Final approval${suffix}`, by: user.name, at });
-  }
-
-  logOnLinkedRequest(procurement, { status: procurement.status, note: `Procurement ${procurement.status.replace("_", " ")}`, by: user.name, at });
-  return copy(procurement);
-}
