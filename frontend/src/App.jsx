@@ -25,6 +25,14 @@ import NotificationsPage from "./pages/notifications/NotificationsPage";
 
 import InventoryPage from "./pages/inventory/InventoryPage";
 
+import MyRequests from "./pages/requests/MyRequests";
+import RequestForm from "./pages/requests/RequestForm";
+import ProcurementQueue from "./pages/procurement/ProcurementQueue";
+import ProcurementForm from "./pages/procurement/ProcurementForm";
+
+const REQUEST_ROLES = ["staff", "admin"];
+const PROCUREMENT_ROLES = ["manager", "admin"];
+
 const INVENTORY_ROLES = ["admin", "manager"];
 
 
@@ -142,6 +150,10 @@ function AppRoutes() {
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/disbursements" element={<Disbursements />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/requests" element={<RoleGuard allowedRoles={REQUEST_ROLES}><MyRequests /></RoleGuard>} />
+          <Route path="/requests/new" element={<RoleGuard allowedRoles={REQUEST_ROLES}><RequestForm /></RoleGuard>} />
+          <Route path="/procurement" element={<RoleGuard allowedRoles={PROCUREMENT_ROLES}><ProcurementQueue /></RoleGuard>} />
+          <Route path="/procurement/new" element={<RoleGuard allowedRoles={PROCUREMENT_ROLES}><ProcurementForm /></RoleGuard>} />
 
           <Route
             path="/inventory"
