@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
-import { declineRequest, getIncomingRequests, issueRequest } from "../../api/requests";
 import { escalateProcurement, getProcurements } from "../../api/procurement";
 import { EmptyState, ErrorState, LoadingState } from "../requests/ModuleStates";
 import RequestTimeline from "../requests/RequestTimeline";
@@ -12,7 +11,6 @@ const formatKes = (value) => (value ? `KES ${Number(value).toLocaleString()}` : 
 
 export default function ProcurementQueue() {
   const { user } = useAuth();
-  const [incoming, setIncoming] = useState([]);
   const [procurements, setProcurements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,11 +22,9 @@ export default function ProcurementQueue() {
     setLoading(true);
     setError("");
     try {
-      const [requestList, procurementList] = await Promise.all([getIncomingRequests(), getProcurements()]);
-      setIncoming(requestList);
-      setProcurements(procurementList);
+      setProcurements(await getProcurements());
     } catch (err) {
-      setError(err.message || "Could not load the queue.");
+      setError(err.message || "Could not load the procurement queue.");
     } finally {
       setLoading(false);
     }
@@ -38,64 +34,35 @@ export default function ProcurementQueue() {
     load();
   }, []);
 
-  async function run(id, action) {
+  async function sendToApprover(id) {
     setBusyId(id);
     setActionError("");
     try {
-      await action();
+      await escalateProcurement(id, user);
       await load();
     } catch (err) {
-      setActionError(err.message || "That action failed.");
+      setActionError(err.message || "Could not send this request.");
     } finally {
       setBusyId(null);
     }
   }
 
-  if (loading) return <LoadingState text="Loading queue..." />;
+  if (loading) return <LoadingState text="Loading procurement queue..." />;
   if (error) return <ErrorState message={error} onRetry={load} />;
 
   return (
     <section className="rq-page">
       <header className="rq-header">
-        <h2>Requests & procurement</h2>
+        <h2>Procurement queue</h2>
         <Link className="rq-btn" to="/procurement/new">New procurement</Link>
       </header>
 
       {actionError && <div className="rq-banner rq-banner--error">{actionError}</div>}
 
-      <h3 className="rq-section-title">Incoming requests ({incoming.length})</h3>
-      {incoming.length === 0 ? (
-        <EmptyState text="No requests waiting for you." />
-      ) : (
-        <ul className="rq-list">
-          {incoming.map((request) => (
-            <li key={request.id} className="rq-card">
-              <div className="rq-card__top">
-                <div>
-                  <h3>{request.itemName}</h3>
-                  <p className="rq-meta">
-                    {request.quantity} × {request.itemType} · {request.requestedBy} · needed by {request.neededBy}
-                  </p>
-                </div>
-                <StatusPill status={request.status} />
-              </div>
-              <p className="rq-reason">{request.reason}</p>
-              <div className="rq-actions">
-                <button className="rq-btn" disabled={busyId === request.id} onClick={() => run(request.id, () => issueRequest(request.id, user))}>
-                  Issue item
-                </button>
-                <button className="rq-btn rq-btn--ghost" disabled={busyId === request.id} onClick={() => run(request.id, () => declineRequest(request.id, user))}>
-                  Decline
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h3 className="rq-section-title">Procurement requests ({procurements.length})</h3>
       {procurements.length === 0 ? (
-        <EmptyState text="No procurement requests yet." />
+        <EmptyState text="No procurement requests yet.">
+          <Link className="rq-btn" to="/procurement/new">Create one</Link>
+        </EmptyState>
       ) : (
         <ul className="rq-list">
           {procurements.map((procurement) => {
@@ -123,7 +90,7 @@ export default function ProcurementQueue() {
                       className="rq-btn"
                       disabled={incomplete || busyId === procurement.id}
                       title={incomplete ? "Add an estimated cost and supplier first" : ""}
-                      onClick={() => run(procurement.id, () => escalateProcurement(procurement.id, user))}
+                      onClick={() => sendToApprover(procurement.id)}
                     >
                       Send to approver
                     </button>

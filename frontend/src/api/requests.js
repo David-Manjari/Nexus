@@ -20,13 +20,6 @@ function allItems() {
   return [...tools, ...devices, ...vehicles];
 }
 
-function findPendingRequest(requestId) {
-  const request = requests.find((r) => r.id === requestId);
-  if (!request) throw new Error("Request not found.");
-  if (request.status !== "pending") throw new Error("This request has already been handled.");
-  return request;
-}
-
 // GET /api/requestable-items  ->  [{ id, type, name, category, status }]
 export async function getRequestableItems() {
   await wait();
@@ -101,28 +94,5 @@ export async function createRequest({ itemId, quantity, reason, neededBy }, user
   }
 
   requests.push(request);
-  return copy(request);
-}
-
-// POST /api/requests/:id/issue  ->  request
-export async function issueRequest(requestId, user) {
-  await wait();
-  const request = findPendingRequest(requestId);
-  request.status = "issued";
-  request.history.push({ status: "issued", note: "Item issued by store manager", by: user.name, at: now() });
-  return copy(request);
-}
-
-// POST /api/requests/:id/decline  { note }  ->  request
-export async function declineRequest(requestId, user, note = "") {
-  await wait();
-  const request = findPendingRequest(requestId);
-  request.status = "declined";
-  request.history.push({
-    status: "declined",
-    note: note.trim() ? `Declined: ${note.trim()}` : "Declined by store manager",
-    by: user.name,
-    at: now(),
-  });
   return copy(request);
 }
