@@ -23,6 +23,11 @@ import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 
+import InventoryPage from "./pages/inventory/InventoryPage";
+
+const INVENTORY_ROLES = ["admin", "manager"];
+
+
 function getActivePage(pathname) {
   const pageId = pathname.replace(/^\/+/, "").split("/")[0];
   return PAGE_LINKS.find((page) => page.id === pageId) ?? PAGE_LINKS[0];
@@ -137,6 +142,38 @@ function AppRoutes() {
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/disbursements" element={<Disbursements />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+
+          <Route
+            path="/inventory"
+            element={
+              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+                <Navigate to="/inventory/tools" replace />
+              </RoleGuard>
+            }/>
+
+          <Route
+            path="/inventory/tools"
+            element={
+              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+                <InventoryPage type="tool" />
+              </RoleGuard>
+            }/>
+
+          <Route
+            path="/inventory/devices"
+            element={
+              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+                <InventoryPage type="device" />
+              </RoleGuard>
+            }/>
+
+          <Route
+            path="/inventory/vehicles"
+            element={
+              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+                <InventoryPage type="vehicle" />
+              </RoleGuard>
+            }/>
 
           <Route
             path="/admin"
