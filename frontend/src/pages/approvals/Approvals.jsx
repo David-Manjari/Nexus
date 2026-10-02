@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./Approvals.css";
 
 const initialApprovals = [
   {
@@ -111,9 +112,11 @@ function Approvals() {
   };
 
   return (
-    <div>
-      <h1>Approvals</h1>
-      <p>Review and manage requests awaiting approval.</p>
+    <div className="approvals-page">
+      <header className="approvals-header">
+        <h1>Approvals</h1>
+        <p>Review and manage requests awaiting approval.</p>
+      </header>
 
       <div className="approval-summary">
         <strong>{pendingCount}</strong> request(s) awaiting approval
@@ -122,6 +125,7 @@ function Approvals() {
       <div className="approval-list">
         {approvals.map((approval) => {
           const timeline = getTimelineStatus(approval.status);
+          const statusClass = approval.status.toLowerCase();
 
           return (
             <div className="approval-card" key={approval.id}>
@@ -129,12 +133,11 @@ function Approvals() {
                 <div>
                   <h2>{approval.request}</h2>
                   <p>
-                    Requested by {approval.requester} ·{" "}
-                    {approval.department}
+                    Requested by {approval.requester} · {approval.department}
                   </p>
                 </div>
 
-                <strong>{approval.status}</strong>
+                <strong className={`approval-status ${statusClass}`}>{approval.status}</strong>
               </div>
 
               <div className="approval-details">
@@ -163,21 +166,11 @@ function Approvals() {
                     }
                   />
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateStatus(approval.id, "Approved")
-                    }
-                  >
+                  <button type="button" onClick={() => updateStatus(approval.id, "Approved")}>
                     Approve
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateStatus(approval.id, "Rejected")
-                    }
-                  >
+                  <button type="button" onClick={() => updateStatus(approval.id, "Rejected")}>
                     Reject
                   </button>
                 </div>
@@ -186,14 +179,12 @@ function Approvals() {
               {approval.status !== "Pending" && (
                 <div className="approval-completed">
                   <p>
-                    This request has been{" "}
-                    {approval.status.toLowerCase()}.
+                    This request has been {approval.status.toLowerCase()}.
                   </p>
 
                   {comments[approval.id] && (
                     <p>
-                      <strong>Comment:</strong>{" "}
-                      {comments[approval.id]}
+                      <strong>Comment:</strong> {comments[approval.id]}
                     </p>
                   )}
                 </div>
@@ -202,22 +193,22 @@ function Approvals() {
               <section className="approval-timeline">
                 <h3>Approval Timeline</h3>
 
-                <div>
+                <div className="approval-timeline-item">
                   <strong>1. Request submitted</strong>
                   <p>Completed</p>
                 </div>
 
-                <div>
+                <div className="approval-timeline-item">
                   <strong>2. Review</strong>
                   <p>{timeline.review}</p>
                 </div>
 
-                <div>
+                <div className="approval-timeline-item">
                   <strong>3. Decision</strong>
                   <p>{timeline.decision}</p>
                 </div>
 
-                <div>
+                <div className="approval-timeline-item">
                   <strong>4. Disbursement</strong>
                   <p>{timeline.disbursement}</p>
                 </div>

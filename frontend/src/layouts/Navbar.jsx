@@ -40,30 +40,6 @@ export default function Navbar({ currentPage }) {
 
                 {user && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {user.roles?.includes('admin') && (
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <Link
-                                    to="/admin/users"
-                                    style={{
-                                        color: '#2563eb',
-                                        textDecoration: 'none',
-                                        fontWeight: '600',
-                                    }}
-                                >
-                                    Users
-                                </Link>
-                                <Link
-                                    to="/admin/roles"
-                                    style={{
-                                        color: '#2563eb',
-                                        textDecoration: 'none',
-                                        fontWeight: '600',
-                                    }}
-                                >
-                                    Roles
-                                </Link>
-                            </div>
-                        )}
                         <span style={{ color: '#cbd5e1' }}>{user.name}</span>
                         <button type="button" onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '8px' }}>
                             Logout
