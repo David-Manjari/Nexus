@@ -32,7 +32,7 @@ function Shell() {
   return (
     <AppLayout activePage={activePage.id}>
       <main className="page-content">
-        <p className="page-eyebrow">ShopFlow workspace</p>
+        <p className="page-eyebrow">Nexus workspace</p>
         <h1>{activePage.label}</h1>
         <Outlet />
       </main>
