@@ -86,34 +86,31 @@ function AppRoutes() {
               <RoleGuard allowedRoles={INVENTORY_ROLES}>
                 <Navigate to="/inventory/tools" replace />
               </RoleGuard>
-            }
-          />
+            }/>
+
           <Route
             path="/inventory/tools"
             element={
               <RoleGuard allowedRoles={INVENTORY_ROLES}>
                 <InventoryPage type="tool" />
               </RoleGuard>
-            }
-          />
+            }/>
+
           <Route
             path="/inventory/devices"
             element={
               <RoleGuard allowedRoles={INVENTORY_ROLES}>
                 <InventoryPage type="device" />
               </RoleGuard>
-            }
-          />
+            }/>
+
           <Route
             path="/inventory/vehicles"
             element={
               <RoleGuard allowedRoles={INVENTORY_ROLES}>
                 <InventoryPage type="vehicle" />
               </RoleGuard>
-            }
-          />
-
-
+            }/>
 
           <Route
             path="/admin"
