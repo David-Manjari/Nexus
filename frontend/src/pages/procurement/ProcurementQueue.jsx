@@ -1,0 +1,148 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
+import { declineRequest, getIncomingRequests, issueRequest } from "../../api/requests";
+import { escalateProcurement, getProcurements } from "../../api/procurement";
+import { EmptyState, ErrorState, LoadingState } from "../requests/ModuleStates";
+import RequestTimeline from "../requests/RequestTimeline";
+import StatusPill from "../requests/StatusPill";
+import "../requests/Requests.css";
+
+const formatKes = (value) => (value ? `KES ${Number(value).toLocaleString()}` : "Not set");
+
+export default function ProcurementQueue() {
+  const { user } = useAuth();
+  const [incoming, setIncoming] = useState([]);
+  const [procurements, setProcurements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [busyId, setBusyId] = useState(null);
+  const [openId, setOpenId] = useState(null);
+
+  async function load() {
+    setLoading(true);
+    setError("");
+    try {
+      const [requestList, procurementList] = await Promise.all([getIncomingRequests(), getProcurements()]);
+      setIncoming(requestList);
+      setProcurements(procurementList);
+    } catch (err) {
+      setError(err.message || "Could not load the queue.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function run(id, action) {
+    setBusyId(id);
+    setActionError("");
+    try {
+      await action();
+      await load();
+    } catch (err) {
+      setActionError(err.message || "That action failed.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState text="Loading queue..." />;
+  if (error) return <ErrorState message={error} onRetry={load} />;
+
+  return (
+    <section className="rq-page">
+      <header className="rq-header">
+        <h2>Requests & procurement</h2>
+        <Link className="rq-btn" to="/procurement/new">New procurement</Link>
+      </header>
+
+      {actionError && <div className="rq-banner rq-banner--error">{actionError}</div>}
+
+      <h3 className="rq-section-title">Incoming requests ({incoming.length})</h3>
+      {incoming.length === 0 ? (
+        <EmptyState text="No requests waiting for you." />
+      ) : (
+        <ul className="rq-list">
+          {incoming.map((request) => (
+            <li key={request.id} className="rq-card">
+              <div className="rq-card__top">
+                <div>
+                  <h3>{request.itemName}</h3>
+                  <p className="rq-meta">
+                    {request.quantity} × {request.itemType} · {request.requestedBy} · needed by {request.neededBy}
+                  </p>
+                </div>
+                <StatusPill status={request.status} />
+              </div>
+              <p className="rq-reason">{request.reason}</p>
+              <div className="rq-actions">
+                <button className="rq-btn" disabled={busyId === request.id} onClick={() => run(request.id, () => issueRequest(request.id, user))}>
+                  Issue item
+                </button>
+                <button className="rq-btn rq-btn--ghost" disabled={busyId === request.id} onClick={() => run(request.id, () => declineRequest(request.id, user))}>
+                  Decline
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="rq-section-title">Procurement requests ({procurements.length})</h3>
+      {procurements.length === 0 ? (
+        <EmptyState text="No procurement requests yet." />
+      ) : (
+        <ul className="rq-list">
+          {procurements.map((procurement) => {
+            const incomplete = !procurement.estimatedCost || !procurement.supplier;
+            return (
+              <li key={procurement.id} className="rq-card">
+                <div className="rq-card__top">
+                  <div>
+                    <h3>{procurement.itemName}</h3>
+                    <p className="rq-meta">
+                      {procurement.quantity} × {procurement.itemType} · {formatKes(procurement.estimatedCost)} · {procurement.supplier || "No supplier"}
+                      {procurement.approvalLevel > 0 && ` · level ${procurement.approvalLevel}`}
+                    </p>
+                  </div>
+                  <StatusPill status={procurement.status} />
+                </div>
+                {procurement.notes && <p className="rq-reason">{procurement.notes}</p>}
+
+                {procurement.status === "draft" && (
+                  <div className="rq-actions">
+                    <Link className="rq-btn rq-btn--ghost" to={`/procurement/new?edit=${procurement.id}`}>
+                      {incomplete ? "Add cost & supplier" : "Edit"}
+                    </Link>
+                    <button
+                      className="rq-btn"
+                      disabled={incomplete || busyId === procurement.id}
+                      title={incomplete ? "Add an estimated cost and supplier first" : ""}
+                      onClick={() => run(procurement.id, () => escalateProcurement(procurement.id, user))}
+                    >
+                      Send to approver
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  className="rq-link"
+                  onClick={() => setOpenId(openId === procurement.id ? null : procurement.id)}
+                  aria-expanded={openId === procurement.id}
+                >
+                  {openId === procurement.id ? "Hide timeline" : "Show timeline"}
+                </button>
+                {openId === procurement.id && <RequestTimeline history={procurement.history} />}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
