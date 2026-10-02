@@ -1,4 +1,5 @@
-import NotificationBell from "../components/NotificationBell";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 export const PAGE_LINKS = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -13,6 +14,14 @@ export const PAGE_LINKS = [
 ];
 
 export default function Navbar({ currentPage }) {
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    };
+
     return (
         <header className="app-header">
             <div className="header-inner">
@@ -23,12 +32,44 @@ export default function Navbar({ currentPage }) {
                             {page.label}
                         </span>
                     ) : (
-                        <a className="nav-item" href={`#/${page.id}`} key={page.id}>
+                        <Link className="nav-item" to={`/${page.id}`} key={page.id}>
                             {page.label}
-                        </a>
+                        </Link>
                     ))}
                 </nav>
-                <NotificationBell />
+
+                {user && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {user.roles?.includes('admin') && (
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <Link
+                                    to="/admin/users"
+                                    style={{
+                                        color: '#2563eb',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                    }}
+                                >
+                                    Users
+                                </Link>
+                                <Link
+                                    to="/admin/roles"
+                                    style={{
+                                        color: '#2563eb',
+                                        textDecoration: 'none',
+                                        fontWeight: '600',
+                                    }}
+                                >
+                                    Roles
+                                </Link>
+                            </div>
+                        )}
+                        <span style={{ color: '#cbd5e1' }}>{user.name}</span>
+                        <button type="button" onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '8px' }}>
+                            Logout
+                        </button>
+                    </div>
+                )}
             </div>
         </header>
     );
