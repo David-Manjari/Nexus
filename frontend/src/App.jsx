@@ -12,6 +12,7 @@ import AppLayout from "./layouts/AppLayout";
 import { PAGE_LINKS } from "./layouts/Navbar";
 import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
+import NotificationsPage from "./pages/notifications/NotificationsPage";
 
 function getActivePage(pathname) {
   const pageId = pathname.replace(/^\/+/, "").split("/")[0];
@@ -48,6 +49,7 @@ function App() {
         <Route element={<Shell />}>
           <Route path="/approvals" element={<Approvals />} />
           <Route path="/disbursements" element={<Disbursements />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<RedirectToPage />} />
       </Routes>

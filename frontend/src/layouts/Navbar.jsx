@@ -1,3 +1,5 @@
+import NotificationBell from "../components/NotificationBell";
+
 export const PAGE_LINKS = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'inventory', label: 'Inventory' },
@@ -26,6 +28,7 @@ export default function Navbar({ currentPage }) {
                         </a>
                     ))}
                 </nav>
+                <NotificationBell />
             </div>
         </header>
     );
