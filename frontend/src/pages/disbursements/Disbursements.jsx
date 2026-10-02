@@ -1,134 +1,180 @@
-import React, { useState } from "react";
-
-const initialPayouts = [
-  {
-    id: 1,
-    recipient: "John Kamau",
-    reference: "PAY-001",
-    amount: "KES 85,000",
-    date: "Today",
-    status: "Pending",
-  },
-  {
-    id: 2,
-    recipient: "Mary Wanjiku",
-    reference: "PAY-002",
-    amount: "KES 120,000",
-    date: "Today",
-    status: "Processing",
-  },
-  {
-    id: 3,
-    recipient: "Peter Mwangi",
-    reference: "PAY-003",
-    amount: "KES 65,000",
-    date: "Yesterday",
-    status: "Paid",
-  },
-  {
-    id: 4,
-    recipient: "Grace Achieng",
-    reference: "PAY-004",
-    amount: "KES 45,000",
-    date: "Yesterday",
-    status: "Failed",
-  },
-];
+import React, { useEffect, useState } from "react";
 
 function Disbursements() {
-  const [payouts, setPayouts] = useState(initialPayouts);
+  const [payouts, setPayouts] = useState(() => {
+    const saved = localStorage.getItem("nexusPayouts");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    const loadPayouts = () => {
+      const saved = localStorage.getItem("nexusPayouts");
+      setPayouts(saved ? JSON.parse(saved) : []);
+    };
+
+    window.addEventListener("storage", loadPayouts);
+
+    const interval = setInterval(loadPayouts, 500);
+
+    return () => {
+      window.removeEventListener("storage", loadPayouts);
+      clearInterval(interval);
+    };
+  }, []);
 
   const updateStatus = (id, status) => {
-    setPayouts((current) =>
-      current.map((payout) =>
-        payout.id === id ? { ...payout, status } : payout
-      )
-    );
+    setPayouts((current) => {
+      const updated = current.map((payout) =>
+        payout.id === id
+          ? { ...payout, status }
+          : payout
+      );
+
+      localStorage.setItem(
+        "nexusPayouts",
+        JSON.stringify(updated)
+      );
+
+      return updated;
+    });
   };
 
-  return (
-    <div className="page-container">
-      <div className="page-header">
+  const pending = payouts.filter(
+    (payout) => payout.status === "Pending"
+  );
+
+  const processing = payouts.filter(
+    (payout) => payout.status === "Processing"
+  );
+
+  const completed = payouts.filter(
+    (payout) => payout.status === "Paid"
+  );
+
+  const failed = payouts.filter(
+    (payout) => payout.status === "Failed"
+  );
+
+  const renderPayout = (payout) => (
+    <div className="payout-card" key={payout.id}>
+      <div className="payout-main">
         <div>
-          <h1>Disbursements</h1>
-          <p>Manage approved requests and monitor payout status.</p>
+          <h3>{payout.recipient}</h3>
+          <p>{payout.reference}</p>
+        </div>
+
+        <strong>{payout.status}</strong>
+      </div>
+
+      <div className="payout-details">
+        <div>
+          <span>Amount</span>
+          <strong>{payout.amount}</strong>
+        </div>
+
+        <div>
+          <span>Date</span>
+          <strong>{payout.date}</strong>
         </div>
       </div>
 
-      <div className="payout-list">
-        {payouts.map((payout) => (
-          <div className="payout-card" key={payout.id}>
-            <div className="payout-main">
-              <div>
-                <h2>{payout.recipient}</h2>
-                <p>{payout.reference}</p>
-              </div>
+      <div className="payout-actions">
+        {payout.status === "Pending" && (
+          <button
+            type="button"
+            onClick={() =>
+              updateStatus(payout.id, "Processing")
+            }
+          >
+            Process Payout
+          </button>
+        )}
 
-              <span
-                className={`status-badge ${payout.status.toLowerCase()}`}
-              >
-                {payout.status}
-              </span>
-            </div>
+        {payout.status === "Processing" && (
+          <>
+            <button
+              type="button"
+              onClick={() =>
+                updateStatus(payout.id, "Paid")
+              }
+            >
+              Mark as Paid
+            </button>
 
-            <div className="payout-details">
-              <div>
-                <span>Amount</span>
-                <strong>{payout.amount}</strong>
-              </div>
+            <button
+              type="button"
+              onClick={() =>
+                updateStatus(payout.id, "Failed")
+              }
+            >
+              Mark Failed
+            </button>
+          </>
+        )}
 
-              <div>
-                <span>Date</span>
-                <strong>{payout.date}</strong>
-              </div>
-            </div>
+        {payout.status === "Failed" && (
+          <button
+            type="button"
+            onClick={() =>
+              updateStatus(payout.id, "Processing")
+            }
+          >
+            Retry Payout
+          </button>
+        )}
 
-            <div className="payout-actions">
-              {payout.status === "Pending" && (
-                <button
-                  className="process-button"
-                  onClick={() => updateStatus(payout.id, "Processing")}
-                >
-                  Process Payout
-                </button>
-              )}
-
-              {payout.status === "Processing" && (
-                <>
-                  <button
-                    className="paid-button"
-                    onClick={() => updateStatus(payout.id, "Paid")}
-                  >
-                    Mark as Paid
-                  </button>
-
-                  <button
-                    className="failed-button"
-                    onClick={() => updateStatus(payout.id, "Failed")}
-                  >
-                    Mark as Failed
-                  </button>
-                </>
-              )}
-
-              {payout.status === "Paid" && (
-                <span className="completed-label">
-                  Payout completed
-                </span>
-              )}
-
-              {payout.status === "Failed" && (
-                <button
-                  className="process-button"
-                  onClick={() => updateStatus(payout.id, "Processing")}
-                >
-                  Retry Payout
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+        {payout.status === "Paid" && (
+          <p>Payout completed successfully.</p>
+        )}
       </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <h1>Disbursements</h1>
+      <p>Manage approved requests and monitor payout status.</p>
+
+      <section className="payout-queue">
+        <h2>Payout Queue</h2>
+
+        <div>
+          <strong>Pending: {pending.length}</strong>
+          <strong>Processing: {processing.length}</strong>
+          <strong>Paid: {completed.length}</strong>
+          <strong>Failed: {failed.length}</strong>
+        </div>
+      </section>
+
+      <section>
+        <h2>Pending Payouts</h2>
+
+        {pending.length === 0 ? (
+          <p>No pending payouts.</p>
+        ) : (
+          pending.map(renderPayout)
+        )}
+      </section>
+
+      <section>
+        <h2>Processing</h2>
+
+        {processing.length === 0 ? (
+          <p>No payouts currently processing.</p>
+        ) : (
+          processing.map(renderPayout)
+        )}
+      </section>
+
+      <section>
+        <h2>Completed / Failed</h2>
+
+        {completed.length === 0 && failed.length === 0 ? (
+          <p>No completed or failed payouts.</p>
+        ) : (
+          [...completed, ...failed].map(renderPayout)
+        )}
+      </section>
     </div>
   );
 }
