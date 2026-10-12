@@ -25,6 +25,9 @@ export const STATUS_LABELS = {
   pending_approval: "Awaiting approval",
   approved: "Approved",
   rejected: "Rejected",
+  escalated: "Escalated to approver",
+  cancelled: "Cancelled",
+  purchased: "Purchased",
 };
 
 // Used only when mock/data.js does not export devices or vehicles yet.
