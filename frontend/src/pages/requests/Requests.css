@@ -72,3 +72,10 @@
   .rq-segment { width: 100%; }
   .rq-segment button { flex: 1; }
 }
+
+/* Statuses that only exist with the real backend */
+.rq-pill--escalated { background: #eff6ff; color: #1d4ed8; }
+.rq-pill--purchased { background: #ecfdf5; color: #065f46; }
+.rq-pill--cancelled { background: #f1f5f9; color: #475569; }
+.rq-timeline__item--escalated .rq-timeline__dot { background: #3b82f6; }
+.rq-timeline__item--purchased .rq-timeline__dot { background: #10b981; }
