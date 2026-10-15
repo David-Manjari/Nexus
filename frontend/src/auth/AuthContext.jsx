@@ -1,68 +1,71 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { DEMO_USERS } from "../roles";
-
-const STORAGE_KEY = "nexus-auth-session";
+import { apiRequest } from "../api/http";
 
 const AuthContext = createContext(null);
 
-function readStoredSession() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+function mapUser(user) {
+  return {
+    id: user.user_id,
+    name: user.username,
+    email: user.email,
+    role: user.role,
+    roles: [user.role],
+    department: null,
+  };
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => readStoredSession());
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-      return;
-    }
+    let active = true;
 
-    localStorage.removeItem(STORAGE_KEY);
-  }, [user]);
+    // Restore identity from Flask's HttpOnly session cookie instead of localStorage.
+    apiRequest("/session/me")
+      .then(({ user: sessionUser }) => {
+        if (active) setUser(mapUser(sessionUser));
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-  const login = ({ email, password }) => {
-    const account = DEMO_USERS.find(
-      (member) =>
-        member.email.toLowerCase() === String(email).trim().toLowerCase() &&
-        member.password === String(password)
-    );
-
-    if (!account) {
-      throw new Error("Invalid email or password.");
-    }
-
-    const sessionUser = {
-      id: account.id,
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      roles: account.roles,
-      department: account.department,
-      active: account.active,
+    return () => {
+      active = false;
     };
+  }, []);
 
-    setUser(sessionUser);
-    return sessionUser;
+  const login = async ({ email, password }) => {
+    // The backend owns credential validation and sets the session cookie.
+    const { user: sessionUser } = await apiRequest("/session/login", {
+      method: "POST",
+      body: { identifier: email, password },
+    });
+    const mappedUser = mapUser(sessionUser);
+    setUser(mappedUser);
+    return mappedUser;
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await apiRequest("/session/logout", { method: "POST" });
+    } finally {
+      setUser(null);
+    }
   };
 
   const value = useMemo(
     () => ({
       user,
+      loading,
       login,
       logout,
       isAuthenticated: !!user,
     }),
-    [user]
+    [user, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

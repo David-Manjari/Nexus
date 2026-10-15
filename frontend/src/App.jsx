@@ -22,6 +22,7 @@ import AdminRolesPage from "./pages/admin/AdminRolesPage";
 import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
+import Loading from "./components/Loading";
 
 import InventoryPage from "./pages/inventory/InventoryPage";
 
@@ -33,6 +34,7 @@ import ProcurementForm from "./pages/procurement/ProcurementForm";
 const REQUEST_ROLES = ["staff", "admin"];
 const PROCUREMENT_ROLES = ["manager", "admin"];
 
+const APPROVER_ROLES = ["admin", "manager"];
 const INVENTORY_ROLES = ["admin", "manager"];
 
 
@@ -138,7 +140,9 @@ function Shell() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return <Loading message="Connecting to Nexus..." />;
 
   return (
     <Routes>
