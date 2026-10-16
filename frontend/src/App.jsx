@@ -22,6 +22,7 @@ import AdminRolesPage from "./pages/admin/AdminRolesPage";
 import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
+import Loading from "./components/Loading";
 
 function getActivePage(pathname) {
   const pageId = pathname.replace(/^\/+/, "").split("/")[0];
@@ -124,7 +125,9 @@ function Shell() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return <Loading message="Connecting to Nexus..." />;
 
   return (
     <Routes>
