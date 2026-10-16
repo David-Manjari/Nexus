@@ -1,47 +1,36 @@
-// Components must only call these functions, never mock/data.js directly.
-// Phase 2: replace each body with a fetch() call to the Flask API.
-//
-// Assumed notification shape (confirm with Member 1 in mock/data.js):
-// { id, userId, message, type, read, emailSent, createdAt }
-import { notifications } from "../mock/data";
+import { apiRequest } from "./http";
 
-export async function getNotifications(userId) {
-  return notifications
-    .filter((n) => n.userId === userId)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+function mapNotification(item) {
+  return {
+    id: item.notification_id,
+    userId: item.user_id,
+    message: item.message,
+    type: item.notif_type,
+    read: item.is_read,
+    emailSent: item.email_sent,
+    createdAt: item.created_at,
+  };
 }
 
-export async function getUnreadCount(userId) {
-  return notifications.filter((n) => n.userId === userId && !n.read).length;
+export async function getNotifications() {
+  const { notifications } = await apiRequest("/notifications");
+  return notifications.map(mapNotification);
+}
+
+export async function getUnreadCount() {
+  const notifications = await getNotifications();
+  return notifications.filter((item) => !item.read).length;
 }
 
 export async function markAsRead(id) {
-  const n = notifications.find((item) => item.id === id);
-  if (!n) throw new Error("Notification not found");
-  n.read = true;
-  return n;
-}
-
-export async function markAllAsRead(userId) {
-  notifications.forEach((n) => {
-    if (n.userId === userId) n.read = true;
+  const { notification } = await apiRequest(`/notifications/${id}/read`, {
+    method: "PATCH",
+    body: {},
   });
-  return true;
+  return mapNotification(notification);
 }
 
-// Called by Members 4 and 5 when someone is assigned something
-// or a request is escalated to them.
-export async function createNotification({ userId, message, type = "info" }) {
-  if (!userId || !message) throw new Error("userId and message are required");
-  const n = {
-    id: Date.now(),
-    userId,
-    message,
-    type,
-    read: false,
-    emailSent: true, // Phase 1: only shown as an "email sent" label
-    createdAt: new Date().toISOString(),
-  };
-  notifications.push(n);
-  return n;
+export async function markAllAsRead() {
+  await apiRequest("/notifications/read-all", { method: "POST", body: {} });
+  return true;
 }
