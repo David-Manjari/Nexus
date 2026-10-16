@@ -24,6 +24,8 @@ import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 import Loading from "./components/Loading";
 
+const APPROVER_ROLES = ["admin", "manager"];
+
 function getActivePage(pathname) {
   const pageId = pathname.replace(/^\/+/, "").split("/")[0];
   return PAGE_LINKS.find((page) => page.id === pageId) ?? PAGE_LINKS[0];
@@ -137,8 +139,8 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Shell />}>
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="/disbursements" element={<Disbursements />} />
+          <Route path="/approvals" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Approvals /></RoleGuard>} />
+          <Route path="/disbursements" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Disbursements /></RoleGuard>} />
           <Route path="/notifications" element={<NotificationsPage />} />
 
           <Route
