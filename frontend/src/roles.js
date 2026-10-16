@@ -2,6 +2,7 @@ export const ROLES = {
   ADMIN: "admin",
   MANAGER: "manager",
   APPROVER: "approver",
+  STORE_MANAGER: "store_manager",
   STAFF: "staff",
 };
 
@@ -23,6 +24,12 @@ export const ROLE_DEFINITIONS = [
     label: "Approver",
     description: "Can approve requests and comment on spending decisions.",
     permissions: ["approve_requests", "comment_on_requests"],
+  },
+  {
+    key: ROLES.STORE_MANAGER,
+    label: "Store manager",
+    description: "Can manage inventory, assign assets, and handle returns.",
+    permissions: ["view_inventory", "manage_inventory", "assign_assets"],
   },
   {
     key: ROLES.STAFF,
