@@ -1,23 +1,17 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
-import { DEMO_USERS, ROLE_DEFINITIONS } from "../../roles";
-
-const demoAccountSummaries = DEMO_USERS.map((person) => ({
-  email: person.email,
-  password: person.password,
-  name: person.name,
-  role: person.role,
-}));
+import { ROLE_DEFINITIONS } from "../../roles";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, user } = useAuth();
   const [form, setForm] = useState({
-    email: "admin@nexus.com",
-    password: "admin123",
+    email: "",
+    password: "",
   });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -28,15 +22,19 @@ export default function LoginPage() {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setSubmitting(true);
 
     try {
-      login(form);
+      // Let Flask validate credentials and provide the session cookie.
+      await login(form);
       navigate("/dashboard", { replace: true });
     } catch (submitError) {
       setError(submitError.message || "Unable to log in.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -129,7 +127,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button type="submit" style={{
+            <button type="submit" disabled={submitting} style={{
               background: "#2563eb",
               color: "#fff",
               border: "none",
@@ -138,23 +136,9 @@ export default function LoginPage() {
               fontSize: "1rem",
               cursor: "pointer",
             }}>
-              Sign in
+              {submitting ? "Signing in..." : "Sign in"}
             </button>
           </form>
-
-          <div style={{ marginTop: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
-            <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Demo accounts</p>
-            <div style={{ display: "grid", gap: "10px" }}>
-              {demoAccountSummaries.map((account) => (
-                <div key={account.email} style={{ background: "#f8fafc", borderRadius: "10px", padding: "10px 12px" }}>
-                  <div><strong>{account.name}</strong> · {account.role}</div>
-                  <div style={{ color: "#475569", fontSize: "0.85rem" }}>
-                    Email: {account.email} · Password: {account.password}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
       </div>
     </div>
