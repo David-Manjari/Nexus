@@ -22,6 +22,8 @@ import AdminRolesPage from "./pages/admin/AdminRolesPage";
 import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
+import ProjectsPage from "./pages/projects/ProjectsPage";
+import Loading from "./components/Loading";
 
 import InventoryPage from "./pages/inventory/InventoryPage";
 
@@ -30,10 +32,10 @@ import RequestForm from "./pages/requests/RequestForm";
 import ProcurementQueue from "./pages/procurement/ProcurementQueue";
 import ProcurementForm from "./pages/procurement/ProcurementForm";
 
-const REQUEST_ROLES = ["staff", "admin"];
-const PROCUREMENT_ROLES = ["manager", "admin"];
-
-const INVENTORY_ROLES = ["admin", "manager"];
+const ALL_ROLES = ["admin", "manager", "store_manager", "staff"];
+const APPROVER_ROLES = ["admin", "manager"];
+const PROCUREMENT_READ_ROLES = ["admin", "manager", "store_manager"];
+const PROCUREMENT_WRITE_ROLES = ["admin", "store_manager"];
 
 
 function getActivePage(pathname) {
@@ -94,7 +96,7 @@ function DashboardHome() {
             fontWeight: 700,
           }}
         >
-          Department: {user?.department}
+          Department: {user?.department || "Not set"}
         </span>
       </div>
 
@@ -138,7 +140,9 @@ function Shell() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return <Loading message="Connecting to Nexus..." />;
 
   return (
     <Routes>
@@ -148,18 +152,19 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Shell />}>
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="/disbursements" element={<Disbursements />} />
+          <Route path="/approvals" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Approvals /></RoleGuard>} />
+          <Route path="/disbursements" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Disbursements /></RoleGuard>} />
           <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/requests" element={<RoleGuard allowedRoles={REQUEST_ROLES}><MyRequests /></RoleGuard>} />
-          <Route path="/requests/new" element={<RoleGuard allowedRoles={REQUEST_ROLES}><RequestForm /></RoleGuard>} />
-          <Route path="/procurement" element={<RoleGuard allowedRoles={PROCUREMENT_ROLES}><ProcurementQueue /></RoleGuard>} />
-          <Route path="/procurement/new" element={<RoleGuard allowedRoles={PROCUREMENT_ROLES}><ProcurementForm /></RoleGuard>} />
+          <Route path="/requests" element={<RoleGuard allowedRoles={ALL_ROLES}><MyRequests /></RoleGuard>} />
+          <Route path="/requests/new" element={<RoleGuard allowedRoles={ALL_ROLES}><RequestForm /></RoleGuard>} />
+          <Route path="/procurement" element={<RoleGuard allowedRoles={PROCUREMENT_READ_ROLES}><ProcurementQueue /></RoleGuard>} />
+          <Route path="/procurement/new" element={<RoleGuard allowedRoles={PROCUREMENT_WRITE_ROLES}><ProcurementForm /></RoleGuard>} />
+          <Route path="/projects" element={<RoleGuard allowedRoles={ALL_ROLES}><ProjectsPage /></RoleGuard>} />
 
           <Route
             path="/inventory"
             element={
-              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+              <RoleGuard allowedRoles={ALL_ROLES}>
                 <Navigate to="/inventory/tools" replace />
               </RoleGuard>
             }/>
@@ -167,7 +172,7 @@ function AppRoutes() {
           <Route
             path="/inventory/tools"
             element={
-              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+              <RoleGuard allowedRoles={ALL_ROLES}>
                 <InventoryPage type="tool" />
               </RoleGuard>
             }/>
@@ -175,7 +180,7 @@ function AppRoutes() {
           <Route
             path="/inventory/devices"
             element={
-              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+              <RoleGuard allowedRoles={ALL_ROLES}>
                 <InventoryPage type="device" />
               </RoleGuard>
             }/>
@@ -183,7 +188,7 @@ function AppRoutes() {
           <Route
             path="/inventory/vehicles"
             element={
-              <RoleGuard allowedRoles={INVENTORY_ROLES}>
+              <RoleGuard allowedRoles={ALL_ROLES}>
                 <InventoryPage type="vehicle" />
               </RoleGuard>
             }/>
