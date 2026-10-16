@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { getItems, deleteItem, returnItem } from "../../api/inventory";
-import { getUsers } from "../../api/users";
+import { useAuth } from "../../auth/AuthContext";
+import { getItems, retireItem, returnItem } from "../../api/inventory";
+import { getAssignableUsers } from "../../api/users";
 import Loading from "../../components/Loading";
 import ErrorMessage from "../../components/ErrorMessage";
 import EmptyState from "../../components/EmptyState";
@@ -14,6 +15,8 @@ import "./InventoryPage.css";
 const STATUSES = ["all", "available", "assigned", "maintenance"];
 
 export default function InventoryPage({ type }) {
+  const { user } = useAuth();
+  const canManage = user?.role === "store_manager";
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +54,8 @@ export default function InventoryPage({ type }) {
   }, [type, reloadKey]);
 
   useEffect(() => {
-    getUsers().then(setUsers).catch(() => setUsers([]));
-  }, []);
+    if (canManage) getAssignableUsers().then(setUsers).catch(() => setUsers([]));
+  }, [canManage]);
 
   const reload = () => setReloadKey((k) => k + 1);
   const closeModal = () => setModal(null);
@@ -108,7 +111,7 @@ export default function InventoryPage({ type }) {
             <option key={c} value={c}>{c === "all" ? "All categories" : c}</option>
           ))}
         </select>
-        <button onClick={openAdd}>Add {type}</button>
+        {canManage && <button onClick={openAdd}>Add {type}</button>}
       </div>
 
       {actionError && <ErrorMessage message={actionError} />}
@@ -118,8 +121,8 @@ export default function InventoryPage({ type }) {
         <EmptyState
           title="No items found"
           message="Try a different search or filter, or add a new item."
-          actionLabel={`Add ${type}`}
-          onAction={openAdd}
+          actionLabel={canManage ? `Add ${type}` : undefined}
+          onAction={canManage ? openAdd : undefined}
         />
       )}
 
@@ -149,22 +152,22 @@ export default function InventoryPage({ type }) {
                   <td><StatusBadge status={item.status} /></td>
                   <td>{item.assignedTo ? userName(item.assignedTo) : "-"}</td>
                   <td className="row-actions">
-                    {item.status === "available" && (
+                    {canManage && item.status === "available" && (
                       <button onClick={() => setModal({ kind: "assign", item })}>Assign</button>
                     )}
-                    {item.status === "assigned" && (
-                      <button onClick={() => runAction(() => returnItem(item.id))}>Return</button>
+                    {canManage && item.status === "assigned" && (
+                      <button onClick={() => runAction(() => returnItem(item.id, item.assignmentId))}>Return</button>
                     )}
                     <button onClick={() => setModal({ kind: "history", item })}>History</button>
-                    <button onClick={() => setModal({ kind: "form", item })}>Edit</button>
-                    <button
-                      disabled={item.status === "assigned"}
+                    {canManage && <button onClick={() => setModal({ kind: "form", item })}>Edit</button>}
+                    {canManage && <button
+                      disabled={item.status === "assigned" || item.status === "retired"}
                       onClick={() => {
-                        if (window.confirm(`Delete ${item.name}?`)) runAction(() => deleteItem(item.id));
+                        if (window.confirm(`Retire ${item.name}?`)) runAction(() => retireItem(item.id));
                       }}
                     >
-                      Delete
-                    </button>
+                      Retire
+                    </button>}
                   </td>
                 </tr>
               ))}
@@ -173,7 +176,7 @@ export default function InventoryPage({ type }) {
         </div>
       )}
 
-      {modal?.kind === "form" && (
+      {canManage && modal?.kind === "form" && (
         <ItemFormModal
           type={type}
           item={modal.item}
@@ -182,7 +185,7 @@ export default function InventoryPage({ type }) {
           onSaved={saved}
         />
       )}
-      {modal?.kind === "assign" && (
+      {canManage && modal?.kind === "assign" && (
         <AssignModal item={modal.item} users={users} onClose={closeModal} onSaved={saved} />
       )}
       {modal?.kind === "history" && (
