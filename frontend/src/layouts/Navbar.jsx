@@ -3,19 +3,20 @@ import { useAuth } from "../auth/AuthContext";
 
 export const PAGE_LINKS = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'inventory', label: 'Inventory' },
-    { id: 'requests', label: 'Requests' },
-    { id: 'procurement', label: 'Procurement' },
-    { id: 'approvals', label: 'Approvals' },
-    { id: 'disbursements', label: 'Disbursements' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'notifications', label: 'Notifications' },
-    { id: 'admin', label: 'Admin' },
+    { id: 'inventory', label: 'Inventory', roles: ['admin', 'manager', 'store_manager', 'staff'] },
+    { id: 'requests', label: 'Requests', roles: ['admin', 'manager', 'store_manager', 'staff'] },
+    { id: 'procurement', label: 'Procurement', roles: ['admin', 'manager', 'store_manager'] },
+    { id: 'approvals', label: 'Approvals', roles: ['admin', 'manager'] },
+    { id: 'disbursements', label: 'Disbursements', roles: ['admin', 'manager'] },
+    { id: 'projects', label: 'Projects', roles: ['admin', 'manager', 'store_manager', 'staff'] },
+    { id: 'notifications', label: 'Notifications', roles: ['admin', 'manager', 'store_manager', 'staff'] },
+    { id: 'admin', label: 'Admin', roles: ['admin'] },
 ];
 
 export default function Navbar({ currentPage }) {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const visibleLinks = PAGE_LINKS.filter((page) => !page.roles || page.roles.includes(user?.role));
 
     const handleLogout = () => {
         logout();
@@ -27,7 +28,7 @@ export default function Navbar({ currentPage }) {
             <div className="header-inner">
                 <span className="brand">NEXUS</span>
                 <nav className="primary-nav" aria-label="Main navigation">
-                    {PAGE_LINKS.map((page) => page.id === currentPage ? (
+                    {visibleLinks.map((page) => page.id === currentPage ? (
                         <span className="nav-item nav-item-current" aria-current="page" key={page.id}>
                             {page.label}
                         </span>

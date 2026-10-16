@@ -1,7 +1,7 @@
 export const ROLES = {
   ADMIN: "admin",
   MANAGER: "manager",
-  APPROVER: "approver",
+  STORE_MANAGER: "store_manager",
   STAFF: "staff",
 };
 
@@ -19,49 +19,16 @@ export const ROLE_DEFINITIONS = [
     permissions: ["approve_requests", "review_reports", "assign_tasks"],
   },
   {
-    key: ROLES.APPROVER,
-    label: "Approver",
-    description: "Can approve requests and comment on spending decisions.",
-    permissions: ["approve_requests", "comment_on_requests"],
+    key: ROLES.STORE_MANAGER,
+    label: "Store manager",
+    description: "Can manage inventory, assign assets, and handle returns.",
+    permissions: ["view_inventory", "manage_inventory", "assign_assets"],
   },
   {
     key: ROLES.STAFF,
     label: "Staff",
     description: "Access to routine operational workflows and self-service requests.",
     permissions: ["submit_requests", "view_dashboard"],
-  },
-];
-
-export const DEMO_USERS = [
-  {
-    id: 1,
-    name: "Nexus Admin",
-    email: "admin@nexus.com",
-    password: "admin123",
-    role: ROLES.ADMIN,
-    roles: [ROLES.ADMIN],
-    department: "IT",
-    active: true,
-  },
-  {
-    id: 2,
-    name: "Operations Manager",
-    email: "manager@nexus.com",
-    password: "manager123",
-    role: ROLES.MANAGER,
-    roles: [ROLES.MANAGER, ROLES.APPROVER],
-    department: "Operations",
-    active: true,
-  },
-  {
-    id: 3,
-    name: "Procurement Staff",
-    email: "staff@nexus.com",
-    password: "staff123",
-    role: ROLES.STAFF,
-    roles: [ROLES.STAFF],
-    department: "Procurement",
-    active: true,
   },
 ];
 

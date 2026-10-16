@@ -22,6 +22,9 @@ import AdminRolesPage from "./pages/admin/AdminRolesPage";
 import Approvals from "./pages/approvals/Approvals";
 import Disbursements from "./pages/disbursements/Disbursements";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
+import Loading from "./components/Loading";
+
+const APPROVER_ROLES = ["admin", "manager"];
 
 import InventoryPage from "./pages/inventory/InventoryPage";
 
@@ -138,7 +141,9 @@ function Shell() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return <Loading message="Connecting to Nexus..." />;
 
   return (
     <Routes>
@@ -148,8 +153,8 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Shell />}>
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/approvals" element={<Approvals />} />
-          <Route path="/disbursements" element={<Disbursements />} />
+          <Route path="/approvals" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Approvals /></RoleGuard>} />
+          <Route path="/disbursements" element={<RoleGuard allowedRoles={APPROVER_ROLES}><Disbursements /></RoleGuard>} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/requests" element={<RoleGuard allowedRoles={REQUEST_ROLES}><MyRequests /></RoleGuard>} />
           <Route path="/requests/new" element={<RoleGuard allowedRoles={REQUEST_ROLES}><RequestForm /></RoleGuard>} />
