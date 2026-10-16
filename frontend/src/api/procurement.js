@@ -1,94 +1,74 @@
-// Procurement API (Member 4). Phase 2: swap each body for a fetch() to Flask.
-import { requests, procurements } from "../mock/requestsData";
+import { apiRequest } from "./http";
 
-const wait = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
-const now = () => new Date().toISOString();
-const copy = (value) => JSON.parse(JSON.stringify(value));
-const byNewest = (a, b) => b.createdAt.localeCompare(a.createdAt);
-const makeId = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-
-function findProcurement(id) {
-  const procurement = procurements.find((p) => p.id === id);
-  if (!procurement) throw new Error("Procurement request not found.");
-  return procurement;
-}
-
-function logOnLinkedRequest(procurement, entry) {
-  if (!procurement.requestId) return;
-  const request = requests.find((r) => r.id === procurement.requestId);
-  if (request) request.history.push(entry);
-}
-
-// GET /api/procurements  ->  [procurement]
-export async function getProcurements() {
-  await wait();
-  return copy([...procurements].sort(byNewest));
-}
-
-// GET /api/procurements/:id  ->  procurement
-export async function getProcurementById(id) {
-  await wait();
-  return copy(findProcurement(id));
-}
-
-// POST /api/procurements  { itemName, itemType, quantity, estimatedCost, supplier, notes }  ->  procurement
-export async function createProcurement(fields, user) {
-  await wait();
-  const at = now();
-  const procurement = {
-    id: makeId("proc"),
-    requestId: null,
-    itemName: fields.itemName.trim(),
-    itemType: fields.itemType,
-    quantity: Number(fields.quantity),
-    estimatedCost: Number(fields.estimatedCost),
-    supplier: fields.supplier.trim(),
-    notes: fields.notes.trim(),
-    status: "draft",
-    approvalLevel: 0,
-    createdBy: user.name,
-    createdAt: at,
-    history: [{ status: "draft", note: "Procurement request created", by: user.name, at }],
+function mapProcurement(item) {
+  return {
+    id: item.procurement_id,
+    requestId: item.request_id,
+    itemName: item.item_name,
+    itemType: item.asset_type,
+    quantity: item.quantity,
+    estimatedCost: item.estimated_cost,
+    supplier: item.supplier ?? "",
+    notes: item.reason ?? "",
+    status: item.status,
+    createdBy: item.raised_by_name,
+    createdAt: item.created_at,
+    history: (item.history ?? []).map((entry) => ({
+      status: entry.status,
+      note: entry.note,
+      by: entry.by,
+      at: entry.at,
+    })),
   };
-  procurements.push(procurement);
-  return copy(procurement);
 }
 
-// PUT /api/procurements/:id  (drafts only)  ->  procurement
-export async function updateProcurement(id, fields, user) {
-  await wait();
-  const procurement = findProcurement(id);
-  if (procurement.status !== "draft") throw new Error("Only drafts can be edited.");
-  procurement.itemName = fields.itemName.trim();
-  procurement.itemType = fields.itemType;
-  procurement.quantity = Number(fields.quantity);
-  procurement.estimatedCost = Number(fields.estimatedCost);
-  procurement.supplier = fields.supplier.trim();
-  procurement.notes = fields.notes.trim();
-  procurement.history.push({ status: "draft", note: "Details updated", by: user.name, at: now() });
-  return copy(procurement);
+function toPayload(fields) {
+  // Keep backend field names at the request boundary.
+  return {
+    item_name: fields.itemName,
+    asset_type: fields.itemType,
+    quantity: Number(fields.quantity),
+    estimated_cost: fields.estimatedCost === "" ? null : Number(fields.estimatedCost),
+    supplier: fields.supplier,
+    reason: fields.notes,
+  };
 }
 
-// POST /api/procurements/:id/escalate  ->  procurement   (push up the chain to level 1)
-export async function escalateProcurement(id, user) {
-  await wait();
-  const procurement = findProcurement(id);
-  if (procurement.status !== "draft") throw new Error("This request has already been sent.");
-  if (!procurement.estimatedCost || !procurement.supplier) {
-    throw new Error("Add an estimated cost and supplier before sending.");
-  }
-  const at = now();
-  procurement.status = "pending_approval";
-  procurement.approvalLevel = 1;
-  procurement.history.push({ status: "pending_approval", note: "Sent to approver (level 1)", by: user.name, at });
-  logOnLinkedRequest(procurement, { status: "pending_approval", note: "Procurement sent for approval", by: user.name, at });
-  return copy(procurement);
+export async function getProcurements() {
+  const { procurements } = await apiRequest("/procurements");
+  return procurements.map(mapProcurement);
 }
 
-// ---- For Member 5 (Approvals) -------------------------------------------
+export async function getProcurementById(id) {
+  const { procurement } = await apiRequest(`/procurements/${id}`);
+  return mapProcurement(procurement);
+}
 
-// GET /api/procurements?status=pending_approval  ->  [procurement]
+export async function createProcurement(fields) {
+  const { procurement } = await apiRequest("/procurements", {
+    method: "POST",
+    body: toPayload(fields),
+  });
+  return mapProcurement(procurement);
+}
+
+export async function updateProcurement(id, fields) {
+  const { procurement } = await apiRequest(`/procurements/${id}`, {
+    method: "PATCH",
+    body: toPayload(fields),
+  });
+  return mapProcurement(procurement);
+}
+
+export async function escalateProcurement(id) {
+  const { procurement } = await apiRequest(`/procurements/${id}`, {
+    method: "PATCH",
+    body: { action: "submit" },
+  });
+  return mapProcurement(procurement);
+}
+
 export async function getProcurementsAwaitingApproval() {
-  await wait();
-  return copy(procurements.filter((p) => p.status === "pending_approval").sort(byNewest));
+  const items = await getProcurements();
+  return items.filter((item) => item.status === "pending_approval");
 }

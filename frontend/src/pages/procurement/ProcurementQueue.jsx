@@ -11,6 +11,7 @@ const formatKes = (value) => (value ? `KES ${Number(value).toLocaleString()}` : 
 
 export default function ProcurementQueue() {
   const { user } = useAuth();
+  const canCreate = user?.role === "admin" || user?.role === "store_manager";
   const [procurements, setProcurements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,7 +55,7 @@ export default function ProcurementQueue() {
     <section className="rq-page">
       <header className="rq-header">
         <h2>Procurement queue</h2>
-        <Link className="rq-btn" to="/procurement/new">New procurement</Link>
+        {canCreate && <Link className="rq-btn" to="/procurement/new">New procurement</Link>}
       </header>
 
       {actionError && <div className="rq-banner rq-banner--error">{actionError}</div>}
